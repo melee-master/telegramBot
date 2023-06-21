@@ -9,9 +9,40 @@ const bot = new Telegraf('6252053857:AAFkZGnPDKV788SyLoKtH21zUwj2CwvNMZw');
 const botToken = "6252053857:AAFkZGnPDKV788SyLoKtH21zUwj2CwvNMZw";
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
-
+const connectDB = require("./db/connect");
+const mongoose = require('mongoose');
+app.use(express.json());
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
+
+
+const start = async () => {
+  console.log("Here 2")
+  try {
+    // console.log("HERE")
+    // await connectDB("mongodb+srv://gaurav0:kumar@cluster0.u5wuwsm.mongodb.net/?retryWrites=true&w=majority");
+
+
+    try {
+      await mongoose.connect("mongodb://gaurav0:kumar@ac-3wtgv1n-shard-00-00.u5wuwsm.mongodb.net:27017,ac-3wtgv1n-shard-00-01.u5wuwsm.mongodb.net:27017,ac-3wtgv1n-shard-00-02.u5wuwsm.mongodb.net:27017/?ssl=true&replicaSet=atlas-8zzpqy-shard-0&authSource=admin&retryWrites=true&w=majority");
+      console.log("Connected to MongoDB");
+    } catch (err) {
+      console.error("Error connecting to MongoDB:", err);
+    }
+    const port = 3000;
+    app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+    });
+    console.log("Connected to DB");
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+
+
+
+
 
 // Replace 'YOUR_TELEGRAM_BOT_TOKEN' with your actual bot token
 const groupIds = ['-1001829501241'];
@@ -42,33 +73,33 @@ async function getTelegramGroups(botToken) {
 }
 
 async function getJoinedGroups(botToken) {
-    const apiUrl = `https://api.telegram.org/bot${botToken}/getMyCommands`;
-    try {
-      const response = await axios.get(apiUrl);
-      const commands = response.data.result;
-      const groups = [];
-      for (const command of commands) {
-        const groupId = command.scope.chat_id;
-        if (groupId) {
-          groups.push(groupId);
-        }
+  const apiUrl = `https://api.telegram.org/bot${botToken}/getMyCommands`;
+  try {
+    const response = await axios.get(apiUrl);
+    const commands = response.data.result;
+    const groups = [];
+    for (const command of commands) {
+      const groupId = command.scope.chat_id;
+      if (groupId) {
+        groups.push(groupId);
       }
-      return groups;
-    } catch (error) {
-      console.error('Failed to retrieve joined groups:', error);
-      return [];
     }
+    return groups;
+  } catch (error) {
+    console.error('Failed to retrieve joined groups:', error);
+    return [];
   }
-  
-  // API endpoint to get all groups
-  app.get('/getAllGroups', async (req, res) => {
-    try {
-      const groups = await getJoinedGroups(botToken);
-      res.json({ groups });
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to retrieve joined groups' });
-    }
-  });
+}
+
+// API endpoint to get all groups
+app.get('/getAllGroups', async (req, res) => {
+  try {
+    const groups = await getJoinedGroups(botToken);
+    res.json({ groups });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve joined groups' });
+  }
+});
 
 // Render the form with groups
 app.get('/', async (req, res) => {
@@ -104,33 +135,33 @@ app.post('/join-group', async (req, res) => {
   }
 });
 
-app.get('/sendMessage', async(req, res)=> {
+app.get('/sendMessage', async (req, res) => {
   const message = "sent via bot";
-  for(let i=0; i<groupIds.length; i++){
+  for (let i = 0; i < groupIds.length; i++) {
     bot.telegram.sendMessage(groupIds[i], message);
   }
-  res.status(200).send({message : 'sent successfully'});
+  res.status(200).send({ message: 'sent successfully' });
 
 })
 
 app.post('/send-image', upload.single('image'), async (req, res) => {
-   // Replace with your Telegram group ID
+  // Replace with your Telegram group ID
   const imageFilePath = req.file.path;
 
   try {
     const formData = new FormData();
     formData.append('photo', fs.createReadStream(imageFilePath));
     let response;
-    for(let i=0; i<groupIds.length; i++){
+    for (let i = 0; i < groupIds.length; i++) {
       const groupId = groupIds[i];
       response = await axios.post(`https://api.telegram.org/bot${botToken}/sendPhoto?chat_id=${groupId}`, formData, {
-      headers: formData.getHeaders(),
+        headers: formData.getHeaders(),
       });
 
-    
+
 
     }
-    
+
 
     const result = await response.data;
     console.log(result);
@@ -145,9 +176,5 @@ app.post('/send-image', upload.single('image'), async (req, res) => {
 
 // Start the bot
 bot.launch();
-
+start();
 // Start the server
-const port = 3000;
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
