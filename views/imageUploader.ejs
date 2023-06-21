@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Image Upload</title>
+</head>
+<body>
+  <h1>Image Upload</h1>
+  <form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" id="imageInput" accept="image/*" required>
+    <button type="submit">Upload and Send Image</button>
+  </form>
+
+  <script>
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const fileInput = document.getElementById('imageInput');
+      const file = fileInput.files[0];
+      
+      if (file) {
+        try {
+          const formData = new FormData();
+          formData.append('image', file);
+          
+          const response = await fetch('/send-image', {
+            method: 'POST',
+            body: formData,
+          });
+          
+          const result = await response.json();
+          console.log(result);
+          
+          // Handle the result or display a success message to the user
+          const messageContainer = document.createElement('div');
+          messageContainer.textContent = result.message;
+          document.body.appendChild(messageContainer);
+        } catch (error) {
+          console.error('Error:', error);
+          // Display an error message to the user
+          const messageContainer = document.createElement('div');
+          messageContainer.textContent = 'Failed to send image. Please try again.';
+          messageContainer.style.color = 'red';
+          document.body.appendChild(messageContainer);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

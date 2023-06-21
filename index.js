@@ -1,7 +1,10 @@
 const express = require('express');
 const { Telegraf } = require('telegraf');
-const axios = require('axios');
 const app = express();
+const multer = require('multer');
+const axios = require('axios');
+const fs = require('fs');
+const FormData = require('form-data');
 const bot = new Telegraf('6252053857:AAFkZGnPDKV788SyLoKtH21zUwj2CwvNMZw');
 const botToken = "6252053857:AAFkZGnPDKV788SyLoKtH21zUwj2CwvNMZw";
 app.set('view engine', 'ejs');
@@ -12,7 +15,12 @@ app.use(express.urlencoded({ extended: true }));
 
 // Replace 'YOUR_TELEGRAM_BOT_TOKEN' with your actual bot token
 const groupIds = ['-1001829501241'];
-
+const upload = multer({
+  dest: 'uploads/',
+  limits: {
+    fileSize: 2 * 1024 * 1024, // 2MB limit for image size
+  },
+});
 async function getTelegramGroups(botToken) {
   const apiUrl = `https://api.telegram.org/bot${botToken}/getUpdates`;
   try {
@@ -66,7 +74,7 @@ async function getJoinedGroups(botToken) {
 app.get('/', async (req, res) => {
   try {
     const groups = await getTelegramGroups(botToken);
-    res.render('index', { groups });
+    res.render('imageUploader', { groups });
   } catch (error) {
     res.render('error', { message: 'Failed to retrieve Telegram groups' });
   }
@@ -97,11 +105,6 @@ app.post('/join-group', async (req, res) => {
 });
 
 app.get('/sendMessage', async(req, res)=> {
-  // groupIds.forEach(groupId => {
-  //   bot.telegram.sendMessage(groupId, message)
-  //     .then(() => console.log(`Message sent to group ${groupId}`))
-  //     .catch(err => console.error(`Error sending message to group ${groupId}:`, err));
-  // });
   const message = "sent via bot";
   for(let i=0; i<groupIds.length; i++){
     bot.telegram.sendMessage(groupIds[i], message);
@@ -110,7 +113,35 @@ app.get('/sendMessage', async(req, res)=> {
 
 })
 
+app.post('/send-image', upload.single('image'), async (req, res) => {
+   // Replace with your Telegram group ID
+  const imageFilePath = req.file.path;
 
+  try {
+    const formData = new FormData();
+    formData.append('photo', fs.createReadStream(imageFilePath));
+    let response;
+    for(let i=0; i<groupIds.length; i++){
+      const groupId = groupIds[i];
+      response = await axios.post(`https://api.telegram.org/bot${botToken}/sendPhoto?chat_id=${groupId}`, formData, {
+      headers: formData.getHeaders(),
+      });
+
+    
+
+    }
+    
+
+    const result = await response.data;
+    console.log(result);
+
+    // Handle the result or send a response to the client
+    res.json({ message: 'Image sent successfully!' });
+  } catch (error) {
+    console.error('Failed to send image:', error);
+    res.status(500).json({ error: 'Failed to send image. Please try again.' });
+  }
+});
 
 // Start the bot
 bot.launch();
