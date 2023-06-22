@@ -7,10 +7,12 @@ const fs = require('fs');
 const FormData = require('form-data');
 const bot = new Telegraf('6252053857:AAFkZGnPDKV788SyLoKtH21zUwj2CwvNMZw');
 const botToken = "6252053857:AAFkZGnPDKV788SyLoKtH21zUwj2CwvNMZw";
+const group = require('./db/model');
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 const connectDB = require("./db/connect");
 const mongoose = require('mongoose');
+
 app.use(express.json());
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
@@ -45,7 +47,7 @@ const start = async () => {
 
 
 // Replace 'YOUR_TELEGRAM_BOT_TOKEN' with your actual bot token
-const groupIds = ['-1001829501241'];
+const groupIds = ['-1001829501241', '-800660927'];
 const upload = multer({
   dest: 'uploads/',
   limits: {
@@ -137,13 +139,44 @@ app.post('/join-group', async (req, res) => {
 
 app.get('/sendMessage', async (req, res) => {
   const message = "sent via bot";
-  for (let i = 0; i < groupIds.length; i++) {
-    bot.telegram.sendMessage(groupIds[i], message);
+  const _groups = await group.find({}, 'groupId');
+  console.log(_groups);
+  for (let i = 0; i < _groups.length; i++) {
+    try{
+      console.log("**************************")
+      console.log(_groups[i].groupId);
+      await bot.telegram.sendMessage(_groups[i].groupId, message);
+
+      console.log(">>>>>>>>>>>>>>>>>>>>>>>")
+    }catch(error){
+      console.log(error);
+    }
+    
   }
   res.status(200).send({ message: 'sent successfully' });
 
 })
+//https://api.telegram.org/bot6252053857:AAFkZGnPDKV788SyLoKtH21zUwj2CwvNMZw/getUpdates
+ 
+app.get('/addMember', async(req, res) => {
+  const apiUrl = `https://api.telegram.org/bot${botToken}/getUpdates`;
+  let responseGroupId;
+  try {
+    const response = await axios.get(apiUrl)
+    console.log(response.data)
+    console.log(responseGroupId); 
 
+    updates = response.data.result;
+    if (updates.length > 0) {
+      const chatId = updates[0].message.chat.id;
+      console.log( chatId);
+    }
+  } catch (error) {
+    console.error('Failed to retrieve group chat ID:', error);
+  }
+  res.status(200).send({message : updates});
+})
+app.get('')
 app.post('/send-image', upload.single('image'), async (req, res) => {
   // Replace with your Telegram group ID
   const imageFilePath = req.file.path;
@@ -174,6 +207,42 @@ app.post('/send-image', upload.single('image'), async (req, res) => {
   }
 });
 
+
+
+
+bot.on('message', async (ctx) => {
+  const chatId = ctx.message.chat.id;
+  const chatName = ctx.message.chat.title; 
+
+  console.log('Group Name:', chatName);
+  console.log('Group ID:', chatId);
+
+  // const Group = new group({
+  //   groupId: chatId,
+  //   groupName: chatName,
+  // });
+
+  try {
+    // Check if a document with the given groupId already exists
+    const existingGroup = await group.findOne({ groupId: chatId });
+
+    if (!existingGroup) {
+      // Create a new group document
+      const Group = new group({
+        groupId: chatId,
+        groupName: chatName,
+      });
+
+      // Save the group document to the database
+      await Group.save();
+      console.log('Group information saved to MongoDB');
+    } else {
+      console.log('Group already exists in MongoDB');
+    }
+  } catch (error) {
+    console.error('Failed to save group information:', error);
+  }
+});
 // Start the bot
 bot.launch();
 start();
