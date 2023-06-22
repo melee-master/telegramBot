@@ -156,6 +156,10 @@ app.get('/sendMessage', async (req, res) => {
   res.status(200).send({ message: 'sent successfully' });
 
 })
+
+app.get('/deleteGroup', async (req, res)=> {
+  
+})
 //https://api.telegram.org/bot6252053857:AAFkZGnPDKV788SyLoKtH21zUwj2CwvNMZw/getUpdates
  
 app.get('/addMember', async(req, res) => {
