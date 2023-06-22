@@ -106,12 +106,29 @@ app.get('/getAllGroups', async (req, res) => {
 // Render the form with groups
 app.get('/', async (req, res) => {
   try {
-    const groups = await getTelegramGroups(botToken);
-    res.render('imageUploader', { groups });
+    res.render('index');
   } catch (error) {
     res.render('error', { message: 'Failed to retrieve Telegram groups' });
   }
 });
+
+
+app.post('/', (req, res) => {
+  console.log(req.body)
+  const messageType = req.body.messageType;
+
+  if (messageType === 'text') {
+    res.redirect(307, '/sendMessage');
+  } else if (messageType === 'image') {
+    res.redirect('/send-image');
+  } else {
+    res.render('result', { message: 'Invalid message type.' });
+  }
+});
+
+// app.get('/deleteGroup', (req, res)=> {
+//   res.render('deleteGroup')
+// })
 
 // Handle the form submission
 app.post('/join-group', async (req, res) => {
@@ -137,7 +154,16 @@ app.post('/join-group', async (req, res) => {
   }
 });
 
-app.get('/sendMessage', async (req, res) => {
+
+app.get('/getGroups', async(req, res)=> {
+  const _groups = await group.find({}, 'groupId, groupName');
+  res.status(200).json(_groups);
+})
+
+app.post('/sendMessage', async (req, res) => {
+  console.log("body in post : ", req.body)
+  const textMessage = req.body.textMessage;
+  console.log("text message : ", textMessage)
   const message = "sent via bot";
   const _groups = await group.find({}, 'groupId');
   console.log(_groups);
@@ -145,7 +171,7 @@ app.get('/sendMessage', async (req, res) => {
     try{
       console.log("**************************")
       console.log(_groups[i].groupId);
-      await bot.telegram.sendMessage(_groups[i].groupId, message);
+      await bot.telegram.sendMessage(_groups[i].groupId, textMessage);
 
       console.log(">>>>>>>>>>>>>>>>>>>>>>>")
     }catch(error){
@@ -158,7 +184,13 @@ app.get('/sendMessage', async (req, res) => {
 })
 
 app.get('/deleteGroup', async (req, res)=> {
-  
+    try{
+      const groups = await group.find({}, 'groupId, groupName');
+      console.log(groups);
+      res.render('deleteGroup', { groups })
+    }catch(error){
+      res.render('error', {message : 'Failed to fetch the group data'});
+    }
 })
 //https://api.telegram.org/bot6252053857:AAFkZGnPDKV788SyLoKtH21zUwj2CwvNMZw/getUpdates
  
@@ -180,7 +212,7 @@ app.get('/addMember', async(req, res) => {
   }
   res.status(200).send({message : updates});
 })
-app.get('')
+
 app.post('/send-image', upload.single('image'), async (req, res) => {
   // Replace with your Telegram group ID
   const imageFilePath = req.file.path;
@@ -236,7 +268,7 @@ bot.on('message', async (ctx) => {
         groupId: chatId,
         groupName: chatName,
       });
-
+      console.log(Group)
       // Save the group document to the database
       await Group.save();
       console.log('Group information saved to MongoDB');

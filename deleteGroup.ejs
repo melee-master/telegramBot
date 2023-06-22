@@ -1,0 +1,41 @@
+<!-- deleteGroup.ejs -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Delete Group</title>
+    <style>
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+
+      th, td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: left;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Delete Group</h1>
+    <form method="POST" action="/deleteGroups">
+      <table>
+        <thead>
+          <tr>
+            <th>Group Name</th>
+            <th>Select</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% groups.forEach(group => { %>
+            <tr>
+              <td><%= group.groupName %></td>
+              <td><input type="checkbox" name="selectedGroups" value="<%= group._id %>"></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <button type="submit">Delete Selected Groups</button>
+    </form>
+  </body>
+</html>
