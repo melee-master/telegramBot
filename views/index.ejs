@@ -1,0 +1,44 @@
+<!-- index.ejs -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Telegram Message Sender</title>
+  </head>
+  <body>
+    <h1>Telegram Message Sender</h1>
+    <form id="messageForm" method="POST" action="/">
+      <label for="messageType">Message Type:</label>
+      <select id="messageType" name="messageType">
+        <option value="text">Text</option>
+        <option value="image">Image</option>
+      </select>
+      <br />
+      <div id="textMessageGroup">
+        <label for="textMessage">Text Message:</label>
+        <textarea id="textMessage" name="textMessage"></textarea>
+      </div>
+      <div id="imageMessageGroup" style="display: none;">
+        <label for="imageFile">Image File:</label>
+        <input type="file" id="imageFile" name="imageFile" accept="image/*" />
+      </div>
+      <br />
+      <button type="submit">Send Message</button>
+    </form>
+    <a href="/deleteGroup">Delete Group</a>
+    <script>
+      document.getElementById('messageType').addEventListener('change', function () {
+        var selectedOption = this.value;
+        var textMessageGroup = document.getElementById('textMessageGroup');
+        var imageMessageGroup = document.getElementById('imageMessageGroup');
+
+        if (selectedOption === 'text') {
+          textMessageGroup.style.display = 'block';
+          imageMessageGroup.style.display = 'none';
+        } else if (selectedOption === 'image') {
+          textMessageGroup.style.display = 'none';
+          imageMessageGroup.style.display = 'block';
+        }
+      });
+    </script>
+  </body>
+</html>
